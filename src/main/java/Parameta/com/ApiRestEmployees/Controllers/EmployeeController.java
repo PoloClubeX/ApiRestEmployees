@@ -17,10 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
 
-import Parameta.com.ApiRestEmployees.Exceptions.BadRequest;
 import Parameta.com.ApiRestEmployees.Models.EmployeeModel;
 import Parameta.com.ApiRestEmployees.Services.EmployeeService;
 
@@ -49,11 +46,19 @@ public class EmployeeController {
 				return map;
 			}
 			if (calculatePassedYears(employee.getBirthDate()) < 18) {
-				map.put("error", "EMPLOYEE MUST BE 18 YEARS OLD AT LEAST");
+				map.put("error", "Employee must be 18 years old at least");
 				map.put("Timestamp", LocalDateTime.now().toString());
 				return map;
 			}
-
+if (LocalDate.now().isBefore(employee.getBirthDate())) {
+	map.put("error", "Employee's birth date cannot be after today");
+	map.put("Timestamp", LocalDateTime.now().toString());
+	return map;
+}else if(LocalDate.now().isBefore(employee.getVinculationDate())) {
+	map.put("error", "Employee's vinculation date cannot be after today");
+	map.put("Timestamp", LocalDateTime.now().toString());
+	return map;
+}
 			return this.employeeService.addEmployee(employee);
 		} catch (NumberFormatException e) {
 			map.put("error", "Bad Request, be sure to send the correct data");
@@ -107,7 +112,7 @@ public class EmployeeController {
 	public String getEmployeeInfo(@PathVariable("employeeId") String employeeIdNotParsed) {
 		int employeeId;
 		try {
-			employeeId=Integer.valueOf(employeeIdNotParsed);
+			employeeId = Integer.valueOf(employeeIdNotParsed);
 			EmployeeModel employee1 = this.employeeService.getEmployee(employeeId);
 			if (employee1 == null) {
 				return "{'Error':'There is not an employee with id " + employeeId + "'";
@@ -115,7 +120,8 @@ public class EmployeeController {
 			return "Total time passed is " + calculateTimePassed(employee1.getVinculationDate())
 					+ " And employees age is " + calculateTimePassed(employee1.getBirthDate());
 		} catch (Throwable throwable) {
-			return "{'Error':'Sent data has an incorrect format -->" + employeeIdNotParsed + "<-- has to be an integer value'";
+			return "{'Error':'Sent data has an incorrect format -->" + employeeIdNotParsed
+					+ "<-- has to be an integer value'";
 		}
 
 	}
@@ -206,6 +212,9 @@ public class EmployeeController {
 		int today = Integer.valueOf(actualDate.toString().substring(8, 10));
 
 		int totalYearsPassed = 0;
+		if (thisYear == yearToValidate) {
+			return 0;
+		}
 		if (thisMonth >= monthToValidate && today >= dayToValidate && thisYear > yearToValidate) {
 			totalYearsPassed = thisYear - yearToValidate;
 		} else {
