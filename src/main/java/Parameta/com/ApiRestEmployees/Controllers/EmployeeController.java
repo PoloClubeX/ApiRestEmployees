@@ -46,7 +46,6 @@ public class EmployeeController {
 					|| employee.getSalary() < 0 || employee.getVinculationDate().toString().equals("")) {
 				map.put("error", "At least one of the sent fields is empty");
 				map.put("Timestamp", LocalDateTime.now().toString());
-
 				return map;
 			}
 			if (calculatePassedYears(employee.getBirthDate()) < 18) {
@@ -71,6 +70,7 @@ public class EmployeeController {
 			}
 			try {
 				if (getEmployee(employee.getEmployeeId()).getFirstName().toString().equals("")) {
+
 				}
 
 			} catch (Exception e2) {
@@ -81,12 +81,11 @@ public class EmployeeController {
 				}
 				map.put("error", "Theres an employee with same Document number");
 				map.put("Timestamp", LocalDateTime.now().toString());
-				e.printStackTrace();
+				return map;
 			}
 
 		}
 		return map;
-
 	}
 
 	@GetMapping("/getEmployee/{employeeId}")
@@ -105,13 +104,20 @@ public class EmployeeController {
 	}
 
 	@GetMapping("/getEmployeeInfo/{employeeId}")
-	public String getEmployeeInfo(@PathVariable("employeeId") Integer employeeId) {
-		EmployeeModel employee1 = this.employeeService.getEmployee(employeeId);
-		if (employee1 == null) {
-			return "There is not an employee with id " + employeeId;
+	public String getEmployeeInfo(@PathVariable("employeeId") String employeeIdNotParsed) {
+		int employeeId;
+		try {
+			employeeId=Integer.valueOf(employeeIdNotParsed);
+			EmployeeModel employee1 = this.employeeService.getEmployee(employeeId);
+			if (employee1 == null) {
+				return "{'Error':'There is not an employee with id " + employeeId + "'";
+			}
+			return "Total time passed is " + calculateTimePassed(employee1.getVinculationDate())
+					+ " And employees age is " + calculateTimePassed(employee1.getBirthDate());
+		} catch (Throwable throwable) {
+			return "{'Error':'Sent data has an incorrect format -->" + employeeIdNotParsed + "<-- has to be an integer value'";
 		}
-		return "Total time passed is " + calculateTimePassed(employee1.getVinculationDate()) + " And employees age is "
-				+ calculateTimePassed(employee1.getBirthDate());
+
 	}
 
 	private int getDaysPassed(int thisMonth, int today, int vinculationDay) {
