@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.time.LocalDate;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,9 +26,12 @@ public class EmployeeController {
 	public ArrayList<EmployeeModel> getEmployees() {
 		return employeeService.listEmployees();
 	}
-
+	
 	@PostMapping()
-	public EmployeeModel addEmployee(@RequestBody EmployeeModel employee) {
+	public Object addEmployee(@RequestBody EmployeeModel employee) {
+		if (calculatePassedYears(employee.getBirthDate()) < 18) {
+			return "{'Error':'EMPLOYEE MUST BE 18 YEARS OLD AT LEAST'}";
+		}
 		return this.employeeService.addEmployee(employee);
 	}
 
@@ -52,61 +56,102 @@ public class EmployeeController {
 		if (employee1 == null) {
 			return "There is not an employee with id " + employeeId;
 		}
-		// Vinculation's date and info
-		LocalDate vinculationDate = employee1.getVinculationDate();
-		System.out.println(vinculationDate);
-		int vinculationYear = Integer.valueOf(vinculationDate.toString().substring(0, 4));
-		System.out.println("Vinculation Year :" + vinculationYear);
-		int vinculationMonth = Integer.valueOf(vinculationDate.toString().substring(5, 7));
-		System.out.println("Vinculation Month:" + vinculationMonth);
-		int vinculationDay = Integer.valueOf(vinculationDate.toString().substring(8, 10));
-		System.out.println("Vinculation Day:" + vinculationDay);
-		LocalDate actualDate = LocalDate.now();
-		// Today's date
-		System.out.println(actualDate.toString());
-		int thisYear = Integer.valueOf(actualDate.toString().substring(0, 4));
-		System.out.println("This year :" + thisYear);
-		int thisMonth = Integer.valueOf(actualDate.toString().substring(5, 7));
-		System.out.println("This month:" + thisMonth);
-		int today = Integer.valueOf(actualDate.toString().substring(8, 10));
-		System.out.println("Today:" + today);
-		int totalYearsVinculated = 0;
-		int totalMonthsVinculated = 0;
-		int totalDaysVinculated = 0;
-
-		// first, calculating years
-		if (vinculationYear > thisYear || (vinculationYear == thisYear && (vinculationMonth > thisMonth)
-				|| vinculationMonth == thisMonth && vinculationDay > today)) {
-			return "Given Date is after today's date";
-		}
-		if (thisMonth >= vinculationMonth && today >= vinculationDay && thisYear > vinculationYear) {
-			totalYearsVinculated = thisYear - vinculationYear;
-		} else {
-			totalYearsVinculated = thisYear - vinculationYear - 1;
-		}
-
-		if (thisMonth >= vinculationMonth && today >= vinculationDay) {
-			totalMonthsVinculated = thisMonth - vinculationMonth;
-		} else if (today >= vinculationDay) {
-			totalMonthsVinculated = 12 - Math.abs(thisMonth - vinculationMonth);
-		} else {
-			totalMonthsVinculated = 12 - Math.abs(thisMonth - vinculationMonth) - 1;
-
-		}
-
-		// revisar esto jajaja
-		if (today >= vinculationDay) {
-			totalDaysVinculated = today - vinculationDay;
-		} else {
-			totalDaysVinculated = getDaysPassed(thisMonth, today, vinculationDay);
-		}
-		return "Total time passed: " + totalYearsVinculated + " years, " + totalMonthsVinculated + " months, "
-				+ totalDaysVinculated + " days.";
+		return "Total time passed is " + calculateTimePassed(employee1.getVinculationDate()) + " And employees age is "
+				+ calculateTimePassed(employee1.getBirthDate());
 	}
 
 	private int getDaysPassed(int thisMonth, int today, int vinculationDay) {
 		int totalDaysPassed = getTotalMonthDays(thisMonth - 1) - vinculationDay + today;
 		return totalDaysPassed;
+	}
+
+	private String calculateTimePassed(LocalDate dateToValidate) {
+		// Separating data from years, months and days to use and compare it
+		int yearToValidate = Integer.valueOf(dateToValidate.toString().substring(0, 4));
+		int monthToValidate = Integer.valueOf(dateToValidate.toString().substring(5, 7));
+		int dayToValidate = Integer.valueOf(dateToValidate.toString().substring(8, 10));
+		// Getting today's date to get a reference about the time range to calculate
+		LocalDate actualDate = LocalDate.now();
+
+		// Separating data from years, months and days to use and compare it
+		int thisYear = Integer.valueOf(actualDate.toString().substring(0, 4));
+		int thisMonth = Integer.valueOf(actualDate.toString().substring(5, 7));
+		int today = Integer.valueOf(actualDate.toString().substring(8, 10));
+		int totalYearsPassed = 0;
+		int totalMonthsPassed = 0;
+		int totalDaysPassed = 0;
+
+		// first, calculating years passed since year to validate
+		if (yearToValidate > thisYear || (yearToValidate == thisYear && (monthToValidate > thisMonth)
+				|| monthToValidate == thisMonth && dayToValidate > today)) {
+			return "Given Date is after today's date";
+		}
+		totalYearsPassed = calculatePassedYears(dateToValidate);
+		totalMonthsPassed = calculatePassedMonths(dateToValidate);
+		totalDaysPassed = calculatePassedDays(dateToValidate);
+
+		return totalYearsPassed + " years, " + totalMonthsPassed + " months, " + totalDaysPassed + " days.";
+	}
+
+	private int calculatePassedDays(LocalDate dateToValidate) {
+		// Separating data from years, months and days to use and compare it
+		int dayToValidate = Integer.valueOf(dateToValidate.toString().substring(8, 10));
+		// Getting today's date to get a reference about the time range to calculate
+		LocalDate actualDate = LocalDate.now();
+
+		// Separating data from years, months and days to use and compare it
+		int thisMonth = Integer.valueOf(actualDate.toString().substring(5, 7));
+		int today = Integer.valueOf(actualDate.toString().substring(8, 10));
+		int totalDaysPassed;
+		if (today >= dayToValidate) {
+			totalDaysPassed = today - dayToValidate;
+		} else {
+			totalDaysPassed = getDaysPassed(thisMonth, today, dayToValidate);
+		}
+		return totalDaysPassed;
+	}
+
+	private int calculatePassedMonths(LocalDate dateToValidate) {
+		// Separating data from years, months and days to use and compare it
+		int monthToValidate = Integer.valueOf(dateToValidate.toString().substring(5, 7));
+		int dayToValidate = Integer.valueOf(dateToValidate.toString().substring(8, 10));
+		// Getting today's date to get a reference about the time range to calculate
+		LocalDate actualDate = LocalDate.now();
+
+		// Separating data from years, months and days to use and compare it
+		int thisMonth = Integer.valueOf(actualDate.toString().substring(5, 7));
+		int today = Integer.valueOf(actualDate.toString().substring(8, 10));
+		int totalMonthsPassed = 0;
+		if (thisMonth >= monthToValidate && today >= dayToValidate) {
+			totalMonthsPassed = thisMonth - monthToValidate;
+		} else if (today >= dayToValidate) {
+			totalMonthsPassed = 12 - Math.abs(thisMonth - monthToValidate);
+		} else {
+			totalMonthsPassed = 12 - Math.abs(thisMonth - monthToValidate) - 1;
+		}
+		return totalMonthsPassed;
+	}
+
+	private int calculatePassedYears(LocalDate dateToValidate) {
+		// Separating data from years, months and days to use and compare it
+		int yearToValidate = Integer.valueOf(dateToValidate.toString().substring(0, 4));
+		int monthToValidate = Integer.valueOf(dateToValidate.toString().substring(5, 7));
+		int dayToValidate = Integer.valueOf(dateToValidate.toString().substring(8, 10));
+		// Getting today's date to get a reference about the time range to calculate
+		LocalDate actualDate = LocalDate.now();
+
+		// Separating data from years, months and days to use and compare it
+		int thisYear = Integer.valueOf(actualDate.toString().substring(0, 4));
+		int thisMonth = Integer.valueOf(actualDate.toString().substring(5, 7));
+		int today = Integer.valueOf(actualDate.toString().substring(8, 10));
+
+		int totalYearsPassed = 0;
+		if (thisMonth >= monthToValidate && today >= dayToValidate && thisYear > yearToValidate) {
+			totalYearsPassed = thisYear - yearToValidate;
+		} else {
+			totalYearsPassed = thisYear - yearToValidate - 1;
+		}
+		return totalYearsPassed;
 	}
 
 	private int getTotalMonthDays(int month) {
