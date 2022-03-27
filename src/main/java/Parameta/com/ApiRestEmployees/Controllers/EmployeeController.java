@@ -75,23 +75,25 @@ public class EmployeeController {
 		int totalDaysVinculated = 0;
 
 		// first, calculating years
-		if (vinculationYear > thisYear || (vinculationYear == thisYear && (vinculationMonth > thisMonth) || vinculationMonth==thisMonth && vinculationDay>today)) {
+		if (vinculationYear > thisYear || (vinculationYear == thisYear && (vinculationMonth > thisMonth)
+				|| vinculationMonth == thisMonth && vinculationDay > today)) {
 			return "Given Date is after today's date";
 		}
-		if (vinculationMonth >= thisMonth && vinculationDay >= today && thisYear > vinculationYear) {
+		if (thisMonth >= vinculationMonth && today >= vinculationDay && thisYear > vinculationYear) {
 			totalYearsVinculated = thisYear - vinculationYear;
-		} /*
-			 * else { totalYearsVinculated = thisYear - vinculationYear - 1; }
-			 */
-
-		if (thisMonth>=vinculationMonth && today>=vinculationDay) {
-			totalMonthsVinculated=thisMonth-vinculationMonth;
-		}else if(thisMonth>vinculationMonth) {
-			totalMonthsVinculated=thisMonth-vinculationMonth;
-		}else {
-			totalMonthsVinculated=12-Math.abs(thisMonth-vinculationMonth);
+		} else {
+			totalYearsVinculated = thisYear - vinculationYear - 1;
 		}
-		
+
+		if (thisMonth >= vinculationMonth && today >= vinculationDay) {
+			totalMonthsVinculated = thisMonth - vinculationMonth;
+		} else if (today >= vinculationDay) {
+			totalMonthsVinculated = 12 - Math.abs(thisMonth - vinculationMonth);
+		} else {
+			totalMonthsVinculated = 12 - Math.abs(thisMonth - vinculationMonth) - 1;
+
+		}
+
 		// revisar esto jajaja
 		if (today >= vinculationDay) {
 			totalDaysVinculated = today - vinculationDay;
