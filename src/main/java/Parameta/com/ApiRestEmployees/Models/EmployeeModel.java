@@ -1,10 +1,7 @@
 package Parameta.com.ApiRestEmployees.Models;
 
-import java.util.Date;
-
 import javax.persistence.*;
-
-import org.hibernate.annotations.RowId;
+import java.time.LocalDate;
 
 @Entity
 @Table(name="Employee")
@@ -24,9 +21,9 @@ public class EmployeeModel {
 	@Column(unique = true, nullable=false)
 	private String documentNumber;
 	@Column(nullable=false)
-	private Date birthDate;
+	private LocalDate birthDate;
 	@Column(nullable=false)
-	private Date vinculationDate;
+	private LocalDate vinculationDate;
 	@Column(nullable=false)
 	private String position;
 	private double salary;
@@ -60,16 +57,16 @@ public class EmployeeModel {
 	public void setDocumentNumber(String documentNumber) {
 		this.documentNumber = documentNumber;
 	}
-	public Date getBirthDate() {
+	public LocalDate getBirthDate() {
 		return birthDate;
 	}
-	public void setBirthDate(Date birthDate) {
+	public void setBirthDate(LocalDate birthDate) {
 		this.birthDate = birthDate;
 	}
-	public Date getVinculationDate() {
+	public LocalDate getVinculationDate() {
 		return vinculationDate;
 	}
-	public void setVinculationDate(Date vinculationDate) {
+	public void setVinculationDate(LocalDate vinculationDate) {
 		this.vinculationDate = vinculationDate;
 	}
 	public String getPosition() {
