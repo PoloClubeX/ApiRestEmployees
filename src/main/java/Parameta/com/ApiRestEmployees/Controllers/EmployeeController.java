@@ -1,7 +1,9 @@
 package Parameta.com.ApiRestEmployees.Controllers;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -30,9 +32,20 @@ public class EmployeeController {
 	@PostMapping()
 	public Object addEmployee(@RequestBody EmployeeModel employee) {
 		if (calculatePassedYears(employee.getBirthDate()) < 18) {
-			return "{'Error':'EMPLOYEE MUST BE 18 YEARS OLD AT LEAST'}";
+			 HashMap<String, String> map = new HashMap<String, String>();
+			    map.put("error", "EMPLOYEE MUST BE 18 YEARS OLD AT LEAST");
+			    map.put("Timestamp", LocalDateTime.now().toString());
+			    return map;
 		}
-		return this.employeeService.addEmployee(employee);
+		try {
+			return this.employeeService.addEmployee(employee);	
+		} catch (Exception e) {
+			HashMap<String, String> map = new HashMap<String, String>();
+		    map.put("error", "There is a registered employee with document number "+employee.getDocumentNumber());
+		    map.put("Timestamp", LocalDateTime.now().toString());
+		    return map;
+		}
+		
 	}
 
 	@GetMapping("/getEmployee/{employeeId}")
