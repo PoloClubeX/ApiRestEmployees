@@ -5,16 +5,22 @@ import java.util.HashMap;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
+import Parameta.com.ApiRestEmployees.Exceptions.BadRequest;
 import Parameta.com.ApiRestEmployees.Models.EmployeeModel;
 import Parameta.com.ApiRestEmployees.Services.EmployeeService;
 
@@ -28,24 +34,59 @@ public class EmployeeController {
 	public ArrayList<EmployeeModel> getEmployees() {
 		return employeeService.listEmployees();
 	}
-	
+
 	@PostMapping()
+	@ExceptionHandler
 	public Object addEmployee(@RequestBody EmployeeModel employee) {
-		if (calculatePassedYears(employee.getBirthDate()) < 18) {
-			 HashMap<String, String> map = new HashMap<String, String>();
-			    map.put("error", "EMPLOYEE MUST BE 18 YEARS OLD AT LEAST");
-			    map.put("Timestamp", LocalDateTime.now().toString());
-			    return map;
-		}
+		HashMap<String, String> map = new HashMap<String, String>();
 		try {
-			return this.employeeService.addEmployee(employee);	
+			if (employee.getDocumentNumber().equals("") || employee.getBirthDate().toString().equals("")
+					|| employee.getDocumentType().equals("") || employee.getFirstName().equals("")
+					|| employee.getLastName().equals("") || employee.getPosition().equals("")
+					|| employee.getSalary() < 0 || employee.getVinculationDate().toString().equals("")) {
+				map.put("error", "At least one of the sent fields is empty");
+				map.put("Timestamp", LocalDateTime.now().toString());
+
+				return map;
+			}
+			if (calculatePassedYears(employee.getBirthDate()) < 18) {
+				map.put("error", "EMPLOYEE MUST BE 18 YEARS OLD AT LEAST");
+				map.put("Timestamp", LocalDateTime.now().toString());
+				return map;
+			}
+
+			return this.employeeService.addEmployee(employee);
+		} catch (NumberFormatException e) {
+			map.put("error", "Bad Request, be sure to send the correct data");
+			map.put("Timestamp", LocalDateTime.now().toString());
+			return map;
 		} catch (Exception e) {
-			HashMap<String, String> map = new HashMap<String, String>();
-		    map.put("error", "There is a registered employee with document number "+employee.getDocumentNumber());
-		    map.put("Timestamp", LocalDateTime.now().toString());
-		    return map;
+			if (employee.getDocumentNumber() == null || employee.getBirthDate() == null
+					|| employee.getDocumentType() == null || employee.getFirstName() == null
+					|| employee.getLastName() == null || employee.getPosition() == null || employee.getSalary() < 0
+					|| employee.getVinculationDate() == null) {
+				map.put("error", "Sent information is not well written full or valid, please review the sent body");
+				map.put("Timestamp", LocalDateTime.now().toString());
+				return map;
+			}
+			try {
+				if (getEmployee(employee.getEmployeeId()).getFirstName().toString().equals("")) {
+				}
+
+			} catch (Exception e2) {
+				if (employee.getDocumentNumber() == "") {
+					map.put("error", "Document Number cannot be empty");
+					map.put("Timestamp", LocalDateTime.now().toString());
+					return map;
+				}
+				map.put("error", "Theres an employee with same Document number");
+				map.put("Timestamp", LocalDateTime.now().toString());
+				e.printStackTrace();
+			}
+
 		}
-		
+		return map;
+
 	}
 
 	@GetMapping("/getEmployee/{employeeId}")
